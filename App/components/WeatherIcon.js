@@ -7,7 +7,7 @@ export const WeatherIcon = ({ icon }) => (
   <View style={{ alignItems: "center" }}>
     <Image
       source={getWeatherIcon(icon)}
-      style={{ width: 200, height: 200, tintColor: "#fff" }}
+      style={{ width: 200, height: 200, tintColor: "#fff", margin: 20 }}
       resizeMode="contain"
     />
   </View>
