@@ -21,6 +21,8 @@ DerivedData
 *.ipa
 *.xcuserstate
 
+./App/util/weatherApi.js
+
 # Android/IntelliJ
 #
 build/
