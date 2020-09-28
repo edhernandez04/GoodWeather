@@ -1,5 +1,5 @@
 import React from 'react';
-import {ActivityIndicator, ScrollView, SafeAreaView, View, Image} from 'react-native';
+import {ActivityIndicator, ScrollView, SafeAreaView, View, Image, Alert} from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import {format} from 'date-fns';
 import {weatherApi} from '../util/weatherApi';
@@ -16,6 +16,8 @@ const groupForecastByDay = (list) => {
     if (data[day]) {
       if (data[day].temp_max < item.main.temp_max) data[day].temp_max = item.main.temp_max;
       if (data[day].temp_min > item.main.temp_min) data[day].temp_min = item.main.temp_min;
+      if (data[day].icon) data[day].icon = item.weather[0].icon;
+      if (data[day].description) data[day].description = item.weather[0].description
     } else {
       data[day] = {
         icon: item.weather[0].icon,
@@ -30,7 +32,7 @@ const groupForecastByDay = (list) => {
     day: key,
     ...data[key],
   }));
-  
+
   return formattedList;
 };
 
@@ -53,6 +55,26 @@ export default class Details extends React.Component {
       {enableHighAccuracy: false, timeout: 20000, maximumAge: 10000},
     );
   }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.route.params && prevProps.route.params.zipcode) {
+      const oldZipcode = prevProps.route.params.zipcode
+      const zipcode = this.props.route.params.zipcode;
+      if (zipcode && oldZipcode !== zipcode) {
+        this.getCurrentWeather({ zipcode });
+        this.getForecast({ zipcode });
+      }
+    }
+  }
+
+    handleError = () => {
+    Alert.alert('No location data found!', 'Please try again', [
+      {
+        text: 'Okay',
+        onPress: () => this.props.navigation.navigate('Search'),
+      },
+    ]);
+  };
 
   getCurrentWeather = ({zipcode, coords}) =>
     weatherApi('/weather', {zipcode, coords})
@@ -110,7 +132,7 @@ export default class Details extends React.Component {
                 <BasicRow
                   key={day.day}
                   style={{justifyContent: 'space-between', alignItems: 'center'}}>
-                  <P>{format(new Date(day.day), 'EEEE, MMM d')}</P>
+                  <P>{format(new Date(day.day), 'EEEE MMM d')}</P>
                   <View style={{flexDirection: 'row', alignItems: 'center'}}>
                     <P>{day.description}</P>
                   <Image
