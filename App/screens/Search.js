@@ -25,12 +25,10 @@ class Search extends React.Component {
           <SearchItem
             name={item.name}
             key={item.id}
-            onPress={
-              (() => this.props.navigation.navigate('Details'),
-              {
-                lat: item.lat,
-                lon: item.lon,
-              })
+            onPress={() => this.props.navigation.navigate('Details', {
+              lat: item.lat,
+              lon: item.lon,
+            })
             }
           />
         )}
