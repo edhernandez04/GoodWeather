@@ -18,6 +18,7 @@ export const BasicRow = ({ children, style = {} }) => (
 
 export const SearchItem = ({ name, onPress }) => (
   <TouchableOpacity
+    key={name}
     onPress={onPress}
     style={{
       paddingHorizontal: 10,

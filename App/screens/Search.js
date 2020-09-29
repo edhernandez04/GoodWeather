@@ -1,25 +1,40 @@
 import React from 'react';
-import { FlatList, Text, View } from 'react-native';
+import {FlatList, Text, View, TouchableOpacity} from 'react-native';
 
-import { SearchBar } from '../components/SearchBar';
-import { SearchItem } from '../components/List';
+import {SearchBar} from '../components/SearchBar';
+import {SearchItem} from '../components/List';
+import {getRecentSearch} from '../util/recentSearch';
 
 class Search extends React.Component {
   state = {
     query: '',
+    recentSearch: [],
   };
+
+  componentDidMount() {
+    getRecentSearch().then((recentSearch) => {
+      this.setState({recentSearch});
+    });
+  }
 
   render() {
     return (
       <FlatList
-        data={[{ id: 1, name: 'Franklin' }, { id: 2, name: 'Mountain View' }]}
-        renderItem={({ item }) => (
+        data={this.state.recentSearch}
+        renderItem={({item}) => (
           <SearchItem
             name={item.name}
-            onPress={() => this.props.navigation.navigate('Details')}
+            key={item.id}
+            onPress={
+              (() => this.props.navigation.navigate('Details'),
+              {
+                lat: item.lat,
+                lon: item.lon,
+              })
+            }
           />
         )}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={(item) => item.id.toString()}
         ListHeaderComponent={
           <View>
             <SearchBar
@@ -28,9 +43,9 @@ class Search extends React.Component {
                   zipcode: this.state.query,
                 });
               }}
-              searchButtonEnabled={this.state.query.length >= 5}
+              searchButtonEnabled={(this.state.query.length = 5)}
               placeholder="Zipcode"
-              onChangeText={query => this.setState({ query: '10457' })}
+              onChangeText={(query) => this.setState({query})}
             />
             <Text
               style={{
@@ -39,8 +54,7 @@ class Search extends React.Component {
                 color: '#aaa',
                 marginTop: 10,
                 marginBottom: 5,
-              }}
-            >
+              }}>
               Recents
             </Text>
           </View>

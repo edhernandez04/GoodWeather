@@ -8,6 +8,7 @@ import {WeatherIcon} from '../components/WeatherIcon';
 import {BasicRow} from '../components/List';
 import {H1, H2, P} from '../components/Text';
 import { getWeatherIcon } from "../util/icons";
+import { addRecentSearch } from '../util/recentSearch';
 
 const groupForecastByDay = (list) => {
   const data = {};
@@ -57,13 +58,18 @@ export default class Details extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.route.params && prevProps.route.params.zipcode) {
-      const oldZipcode = prevProps.route.params.zipcode
-      const zipcode = this.props.route.params.zipcode;
-      if (zipcode && oldZipcode !== zipcode) {
-        this.getCurrentWeather({ zipcode });
-        this.getForecast({ zipcode });
-      }
+    const oldLat = prevProps.route.params ? prevProps.route.params.lat : null
+    const lat = this.props.route.params.lat;
+    const oldLon = prevProps.route.params ? prevProps.route.params.lon : null
+    const lon = this.props.route.params.lon;
+    const oldZipcode = prevProps.route.params ? prevProps.route.params.zipcode : null
+    const zipcode = this.props.route.params.zipcode;
+    if (lat && oldLat !== lat && lon && oldLon !== lon) {
+      this.getCurrentWeather({ coords: { latitude: lat, longitude: lon } });
+      this.getForecast({ coords: { latitude: lat, longitude: lon } });
+    } else if (zipcode && oldZipcode !== zipcode) {
+      this.getCurrentWeather({ zipcode });
+      this.getForecast({ zipcode });
     }
   }
 
@@ -76,28 +82,38 @@ export default class Details extends React.Component {
     ]);
   };
 
-  getCurrentWeather = ({zipcode, coords}) =>
-    weatherApi('/weather', {zipcode, coords})
-      .then((response) => {
-        this.props.navigation.setParams({title: response.name});
+  getCurrentWeather = ({ zipcode, coords }) =>
+    weatherApi('/weather', { zipcode, coords })
+      .then(response => {
+        if (response.cod === '404') this.handleError();
+        this.props.navigation.setParams({ title: response.name });
         this.setState({
           currentWeather: response,
           loadingCurrentWeather: false,
         });
-      })
-      .catch((err) => {
-        console.log('current error', err);
-      });
-
-  getForecast = ({zipcode, coords}) =>
-    weatherApi('/forecast', {zipcode, coords})
-      .then((response) => {
-        this.setState({
-          loadingForecast: false,
-          forecast: groupForecastByDay(response.list),
+        addRecentSearch({
+          id: response.id,
+          name: response.name,
+          lat: response.coord.lat,
+          lon: response.coord.lon,
         });
       })
-      .catch((err) => {
+      .catch(err => {
+        console.log('current error', err);
+        this.handleError();
+      });
+
+  getForecast = ({ zipcode, coords }) =>
+    weatherApi('/forecast', { zipcode, coords })
+      .then(response => {
+        if (response.cod !== '404') {
+          this.setState({
+            loadingForecast: false,
+            forecast: groupForecastByDay(response.list),
+          });
+        }
+      })
+      .catch(err => {
         console.log('forecast error', err);
       });
 
@@ -135,11 +151,11 @@ export default class Details extends React.Component {
                   <P>{format(new Date(day.day), 'EEEE MMM d')}</P>
                   <View style={{flexDirection: 'row', alignItems: 'center'}}>
                     <P>{day.description}</P>
-                  <Image
-                    source={getWeatherIcon(day.icon)}
-                    style={{ width: 20, height: 20, tintColor: "#fff", margin: 10 }}
-                    resizeMode="contain"
-                  />
+                    <Image
+                      source={getWeatherIcon(day.icon)}
+                      style={{ width: 20, height: 20, tintColor: "#fff", margin: 10 }}
+                      resizeMode="contain"
+                    />
                     <P style={{fontWeight: '700', marginRight: 10}}>
                       {Math.round(day.temp_max)}
                     </P>
